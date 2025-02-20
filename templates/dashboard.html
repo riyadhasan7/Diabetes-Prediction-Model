@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">Diabetes Prediction</a>
+        <a href="{{ url_for('home') }}" class="btn btn-outline-primary">Back to Home</a>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <h2 class="text-center">User Dashboard</h2>
+    <p class="text-center text-muted">View your past predictions</p>
+
+    {% if records %}
+    <table class="table table-bordered mt-4">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Age</th>
+                <th>BMI</th>
+                <th>HbA1c</th>
+                <th>Blood Glucose</th>
+                <th>Gender</th>
+                <th>Smoking</th>
+                <th>Heart Disease</th>
+                <th>Hypertension</th>
+                <th>Prediction</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record[9] }}</td>
+                <td>{{ record[0] }}</td>
+                <td>{{ record[1] }}</td>
+                <td>{{ record[2] }}</td>
+                <td>{{ record[3] }}</td>
+                <td>{{ record[4] }}</td>
+                <td>{{ record[5] }}</td>
+                <td>{{ "Yes" if record[6] == 1 else "No" }}</td>
+                <td>{{ "Yes" if record[7] == 1 else "No" }}</td>
+                <td><strong>{{ record[8] }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- ✅ Download Buttons -->
+    <a href="{{ url_for('export_csv') }}" class="btn btn-success">Download CSV</a>
+    <a href="{{ url_for('export_pdf') }}" class="btn btn-danger">Download PDF</a>
+
+    {% else %}
+    <p class="text-center text-muted">No records found.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>

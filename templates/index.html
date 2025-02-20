@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diabetes Prediction</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+ <style>
+        .form-container {
+            max-width: 500px; /* ✅ Reducing the form width */
+            margin: 50px auto; /* ✅ Centering the form */
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">Diabetes Prediction</a>
+        <div class="ms-auto">
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary">Login</a>
+            <a href="{{ url_for('signup') }}" class="btn btn-primary">Signup</a>
+        </div>
+    </div>
+</nav>
+
+<!-- ✅ Diabetes Prediction Form -->
+<div class="container">
+    <div class="form-container">
+        <h2 class="text-center">Diabetes Prediction Form</h2>
+        <p class="text-center text-muted">Enter your details below to check for diabetes risk.</p>
+
+        <form action="{{ url_for('predict') }}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Age</label>
+                <input type="number" step="0.01" name="age" required class="form-control" placeholder="Enter age">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">BMI</label>
+                <input type="number" step="0.01" name="bmi" required class="form-control" placeholder="Enter BMI">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">HbA1c Level</label>
+                <input type="number" step="0.01" name="HbA1c_level" required class="form-control" placeholder="Enter HbA1c Level">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Blood Glucose Level</label>
+                <input type="number" step="0.01" name="blood_glucose_level" required class="form-control" placeholder="Enter Blood Glucose Level">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Gender</label>
+                <select name="gender" required class="form-control">
+                    <option value="">Select Gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Smoking History</label>
+                <select name="smoking_history" required class="form-control">
+                    <option value="">Select Smoking History</option>
+                    <option value="No Info">No Info</option>
+                    <option value="current">Current Smoker</option>
+                    <option value="ever">Ever Smoked</option>
+                    <option value="former">Former Smoker</option>
+                    <option value="never">Never Smoked</option>
+                    <option value="not current">Not Currently Smoking</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Heart Disease</label>
+                <select name="heart_disease" required class="form-control">
+                    <option value="0">No Heart Disease</option>
+                    <option value="1">Yes, I have Heart Disease</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Hypertension</label>
+                <select name="hypertension" required class="form-control">
+                    <option value="0">No Hypertension</option>
+                    <option value="1">Yes, I have Hypertension</option>
+                </select>
+            </div>
+
+            <!-- ✅ Submit Button -->
+            <button type="submit" class="btn btn-success w-100">Predict Diabetes</button>
+        </form>
+    </div>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prediction Result</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Add Chart.js for visualization -->
+</head>
+<body>
+
+<!-- ✅ Navigation Bar -->
+<nav class="navbar navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">Diabetes Prediction</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Dashboard</a>
+        <a href="{{ url_for('home') }}" class="btn btn-outline-primary">Back to Home</a>
+    </div>
+</nav>
+
+<!-- ✅ Result Display -->
+<div class="container mt-5 text-center">
+    <h2 class="text-success">Your Diabetes Prediction Result</h2>
+
+    <div class="alert alert-info p-3">
+        <h3><strong>Prediction:</strong> {{ prediction }}</h3>
+    </div>
+
+    <!-- ✅ Risk Level Classification -->
+    <div class="mt-3">
+        <h4>Risk Level:
+            {% if prediction == "Yes" and HbA1c_level >= 6.5 or blood_glucose_level > 200 %}
+                <span class="text-danger">High Risk</span>
+            {% elif prediction == "Yes" and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %}
+                <span class="text-warning">Moderate Risk</span>
+            {% else %}
+                <span class="text-success">Low Risk</span>
+            {% endif %}
+        </h4>
+        <div class="progress mt-2" style="height: 20px;">
+            <div class="progress-bar
+                {% if prediction == 'Yes' and HbA1c_level >= 6.5 or blood_glucose_level > 200 %} bg-danger
+                {% elif prediction == 'Yes' and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %} bg-warning
+                {% else %} bg-success {% endif %}"
+                role="progressbar" style="width:
+                {% if prediction == 'Yes' and HbA1c_level >= 6.5 or blood_glucose_level > 200 %} 90%
+                {% elif prediction == 'Yes' and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %} 60%
+                {% else %} 30% {% endif %}">
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Display User Input Summary -->
+    <div class="mt-4 text-left">
+        <h4>Health Summary</h4>
+        <p><strong>Age:</strong> {{ age }}</p>
+        <p><strong>BMI:</strong> {{ bmi }}</p>
+        <p><strong>HbA1c Level:</strong> {{ HbA1c_level }}</p>
+        <p><strong>Blood Glucose Level:</strong> {{ blood_glucose_level }}</p>
+        <p><strong>Gender:</strong> {{ gender }}</p>
+        <p><strong>Smoking History:</strong> {{ smoking_history }}</p>
+        <p><strong>Heart Disease:</strong> {{ "Yes" if heart_disease == 1 else "No" }}</p>
+        <p><strong>Hypertension:</strong> {{ "Yes" if hypertension == 1 else "No" }}</p>
+    </div>
+
+    <!-- ✅ More Personalized Feedback -->
+    <div class="mt-4 p-3 bg-light border rounded">
+        <h4>Personalized Feedback</h4>
+        <p>
+            {% if prediction == "Yes" %}
+                Based on your HbA1c level ({{ HbA1c_level }}) and blood glucose level ({{ blood_glucose_level }}),
+                you are at a **{% if HbA1c_level >= 6.5 or blood_glucose_level > 200 %} high {% elif HbA1c_level >= 5.7 or blood_glucose_level > 140 %} moderate {% else %} low {% endif %}** risk of diabetes.
+                It is recommended that you consult a healthcare professional for further evaluation.
+            {% else %}
+                Your current readings indicate a low risk of diabetes. However, it is important to maintain a **healthy lifestyle** to prevent any future risks.
+            {% endif %}
+        </p>
+    </div>
+
+    <!-- ✅ Recommendations Based on Prediction -->
+    <div class="mt-4 p-3 bg-light border rounded">
+        <h4>Health Recommendations</h4>
+        <ul>
+            {% if prediction == "Yes" %}
+                <li>Schedule a medical consultation for further evaluation.</li>
+                <li>Maintain a balanced diet with fiber-rich foods and monitor carbohydrate intake.</li>
+                <li>Exercise regularly (30 minutes of walking or cardio daily).</li>
+                <li>Monitor blood glucose and HbA1c levels frequently.</li>
+                <li>Reduce processed food and sugar intake.</li>
+            {% else %}
+                <li>Maintain a healthy lifestyle with a balanced diet and regular exercise.</li>
+                <li>Continue monitoring your blood glucose and BMI regularly.</li>
+                <li>Stay hydrated and avoid high-sugar beverages.</li>
+                <li>Follow medical advice for preventive care.</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <!-- ✅ Download & Dashboard Options -->
+    <div class="mt-4">
+        <h4>Manage Your Data</h4>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-2">View Dashboard</a>
+        <a href="{{ url_for('export_csv') }}" class="btn btn-success mt-2">Download CSV</a>
+        <a href="{{ url_for('export_pdf') }}" class="btn btn-danger mt-2">Download PDF</a>
+    </div>
+</div>
+
+</body>
+</html>
