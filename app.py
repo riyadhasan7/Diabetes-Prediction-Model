@@ -259,7 +259,45 @@ def predict():
         prediction = model.predict(input_data)
         print(f"DEBUG: Model Prediction: {prediction}")
 
-        result = "Yes" if prediction[0] == 1 else "No"
+        # ✅ **Apply Rule-Based Override (while keeping the ML model active)**
+        if HbA1c_level >= 6.5 or blood_glucose_level >= 200:
+            result = "Yes"  # Confirmed diabetes (Strict Threshold)
+        elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200:
+            result = "Yes" if prediction[0] == 1 else "No"  # ML Model Decides for Prediabetes Cases
+        else:
+            result = "No"  # Low-risk case, no diabetes
+
+        # ✅ **NEW: Risk Level Calculation**
+        if HbA1c_level >= 6.5 or blood_glucose_level >= 200:
+            risk_level = "High Risk"
+        elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200:
+            risk_level = "Moderate Risk"
+        else:
+            risk_level = "Low Risk"
+
+        # ✅ Store values in session for display on `/result`
+        session.update({
+            'prediction': result,
+            'risk_level': risk_level,
+            'age': age,
+            'bmi': bmi,
+            'HbA1c_level': HbA1c_level,
+            'blood_glucose_level': blood_glucose_level,
+            'gender': gender,
+            'smoking_history': smoking_history,
+            'heart_disease': heart_disease,
+            'hypertension': hypertension
+        })
+
+        return redirect(url_for('result'))
+
+
+    except Exception as e:
+        flash(f"Prediction error: {str(e)}", "danger")
+        return redirect(url_for('home'))
+
+
+
 
         # ✅ Check if `user_id` exists
         user_id = current_user.id if hasattr(current_user, 'id') else None
@@ -320,6 +358,10 @@ def result():
 @app.route('/dashboard')
 @login_required
 def dashboard():
+    if not current_user.is_authenticated:
+        flash("You need to log in before accessing the dashboard.", "warning")
+        return redirect(url_for('login'))
+
     cursor.execute("""
         SELECT age, bmi, HbA1c_level, blood_glucose_level, gender, smoking_history, 
                heart_disease, hypertension, prediction, created_at 
@@ -329,7 +371,17 @@ def dashboard():
 
     records = cursor.fetchall()  # ✅ Get all user records
 
-    return render_template('dashboard.html', records=records)
+    # ✅ Extract data for charts
+    dates = []
+    hba1c_levels = []
+    glucose_levels = []
+
+    for record in records:
+        dates.append(record[9].strftime("%Y-%m-%d"))  # Convert timestamp to string
+        hba1c_levels.append(record[2])
+        glucose_levels.append(record[3])
+
+    return render_template('dashboard.html', records=records, dates=dates, hba1c_levels=hba1c_levels, glucose_levels=glucose_levels)
 
 
 import pandas as pd
@@ -355,47 +407,104 @@ def export_csv():
     return response
 
 
-from fpdf import FPDF
+from flask import session, send_file
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
 
 
 @app.route('/export_pdf')
-@login_required
 def export_pdf():
-    cursor.execute("""
-        SELECT age, bmi, HbA1c_level, blood_glucose_level, gender, smoking_history, 
-               heart_disease, hypertension, prediction, created_at 
-        FROM user_records 
-        WHERE user_id = %s ORDER BY created_at DESC
-    """, (current_user.id,))
+    try:
+        # ✅ Fetch user data from session
+        user_name = session.get('user_name', 'Unknown User')
+        age = session.get('age', 0)
+        bmi = float(session.get('bmi', 0))
+        HbA1c_level = float(session.get('HbA1c_level', 0))
+        blood_glucose_level = float(session.get('blood_glucose_level', 0))
+        smoking_history = session.get('smoking_history', 'No Info')
+        prediction = session.get('prediction', 'No')
 
-    records = cursor.fetchall()
+        # ✅ Determine Risk Level
+        if HbA1c_level >= 6.5 or blood_glucose_level >= 200:
+            risk_level = "High Risk"
+        elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200:
+            risk_level = "Moderate Risk (Pre-Diabetes)"
+        else:
+            risk_level = "Low Risk"
 
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
+        # ✅ Generate personalized feedback
+        feedback = f"Dear {user_name},\n\n"
+        if risk_level == "High Risk":
+            feedback += "⚠️ You are at HIGH risk for diabetes. It is strongly advised to consult a doctor immediately.\n"
+            feedback += "🔹 Reduce sugar intake and follow a strict low-carb diet.\n"
+            feedback += "🔹 Engage in daily physical activities such as walking or cardio exercises.\n"
+        elif risk_level == "Moderate Risk (Pre-Diabetes)":
+            feedback += "⚠️ Your results indicate MODERATE risk (Pre-Diabetes). You need to take preventive actions.\n"
+            feedback += "🔹 Maintain a healthy weight and monitor your HbA1c levels regularly.\n"
+            feedback += "🔹 Consider lifestyle changes, including a fiber-rich diet and exercise.\n"
+        else:
+            feedback += "✅ Your risk level is LOW. Keep maintaining a healthy lifestyle.\n"
+            feedback += "🔹 Continue a balanced diet and engage in regular exercise.\n"
 
-    pdf.cell(200, 10, "Diabetes Prediction Report", ln=True, align="C")
-    pdf.ln(10)
+        # ✅ Health Recommendations
+        recommendations = [
+            "✅ Follow a diet rich in vegetables, lean proteins, and whole grains.",
+            "✅ Engage in at least 30 minutes of physical activity daily.",
+            "✅ Avoid sugary drinks and processed foods.",
+            "✅ Maintain a consistent sleep schedule.",
+            "✅ Regularly monitor your HbA1c and glucose levels."
+        ]
 
-    for record in records:
-        pdf.cell(200, 10, f"Date: {record[9]}", ln=True)
-        pdf.cell(200, 10, f"Age: {record[0]}", ln=True)
-        pdf.cell(200, 10, f"BMI: {record[1]}", ln=True)
-        pdf.cell(200, 10, f"HbA1c Level: {record[2]}", ln=True)
-        pdf.cell(200, 10, f"Blood Glucose: {record[3]}", ln=True)
-        pdf.cell(200, 10, f"Gender: {record[4]}", ln=True)
-        pdf.cell(200, 10, f"Smoking: {record[5]}", ln=True)
-        pdf.cell(200, 10, f"Heart Disease: {'Yes' if record[6] == 1 else 'No'}", ln=True)
-        pdf.cell(200, 10, f"Hypertension: {'Yes' if record[7] == 1 else 'No'}", ln=True)
-        pdf.cell(200, 10, f"Prediction: {record[8]}", ln=True)
-        pdf.ln(10)
+        # ✅ Create PDF
+        pdf_path = "current_prediction_report.pdf"
+        pdf = canvas.Canvas(pdf_path, pagesize=letter)
+        width, height = letter
 
-    response = Response(pdf.output(dest='S').encode('latin1'))
-    response.headers["Content-Disposition"] = "attachment; filename=health_report.pdf"
-    response.headers["Content-Type"] = "application/pdf"
-    return response
+        # ✅ Add Title
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawString(50, height - 50, "Diabetes Prediction Report")
+
+        # ✅ User Details Section
+        pdf.setFont("Helvetica", 12)
+        pdf.drawString(50, height - 80, f"User: {user_name}")
+        pdf.drawString(50, height - 100, f"Age: {age}")
+        pdf.drawString(50, height - 120, f"BMI: {bmi}")
+        pdf.drawString(50, height - 140, f"Smoking History: {smoking_history}")
+
+        # ✅ Prediction & Risk Level
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(50, height - 170, f"Prediction: {prediction}")
+        pdf.setFillColorRGB(1, 0, 0) if risk_level == "High Risk" else pdf.setFillColorRGB(1, 0.5,
+                                                                                           0) if risk_level == "Moderate Risk (Pre-Diabetes)" else pdf.setFillColorRGB(
+            0, 1, 0)
+        pdf.drawString(50, height - 190, f"Risk Level: {risk_level}")
+        pdf.setFillColorRGB(0, 0, 0)  # Reset text color
+
+        # ✅ Personalized Feedback
+        pdf.setFont("Helvetica", 12)
+        pdf.drawString(50, height - 220, "Personalized Feedback:")
+        pdf.setFont("Helvetica-Oblique", 12)
+        feedback_lines = feedback.split("\n")
+        y_position = height - 240
+        for line in feedback_lines:
+            pdf.drawString(50, y_position, line)
+            y_position -= 20
+
+        # ✅ Health Recommendations
+        pdf.setFont("Helvetica", 12)
+        pdf.drawString(50, y_position - 20, "Recommended Actions:")
+        y_position -= 40
+        for rec in recommendations:
+            pdf.drawString(50, y_position, rec)
+            y_position -= 20
+
+        # ✅ Save and return PDF file
+        pdf.save()
+        return send_file(pdf_path, as_attachment=True)
+
+    except Exception as e:
+        return f"Error generating PDF: {str(e)}"
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True
