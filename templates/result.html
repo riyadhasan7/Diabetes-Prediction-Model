@@ -5,105 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Prediction Result</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Add Chart.js for visualization -->
+    <style>
+        body {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        }
+        .container-box {
+            max-width: 800px;
+            margin: 80px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .progress-bar {
+            transition: width 1.5s ease-in-out;
+        }
+    </style>
 </head>
 <body>
 
 <!-- ✅ Navigation Bar -->
-<nav class="navbar navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="/">Diabetes Prediction</a>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Dashboard</a>
-        <a href="{{ url_for('home') }}" class="btn btn-outline-primary">Back to Home</a>
+        <a class="navbar-brand fw-bold text-primary" href="/">Diabetes Prediction</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary me-2"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{{ url_for('home') }}" class="btn btn-outline-primary"><i class="fas fa-home"></i> Back to Home</a>
+        </div>
     </div>
 </nav>
 
-<!-- ✅ Result Display -->
-<div class="container mt-5 text-center">
-    <h2 class="text-success">Your Diabetes Prediction Result</h2>
+<!-- ✅ Result Display with Two-Column Layout -->
+<div class="container mt-5 pt-5">
+    <div class="container-box">
+        <h2 class="text-success">Your Diabetes Prediction Result</h2>
+        <div class="alert alert-info p-3">
+            <h3><strong>Prediction:</strong> {{ prediction }}</h3>
+        </div>
 
-    <div class="alert alert-info p-3">
-        <h3><strong>Prediction:</strong> {{ prediction }}</h3>
-    </div>
+        <!-- ✅ Risk Level Classification (Based on ADA/WHO Medical Guidelines) -->
+        <div class="mt-3">
+            <h4>Risk Level:
+                {% if HbA1c_level >= 6.5 or blood_glucose_level >= 200 %}
+                    <span class="text-danger">High Risk</span>
+                {% elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200 %}
+                    <span class="text-warning">Moderate Risk</span>
+                {% else %}
+                    <span class="text-success">Low Risk</span>
+                {% endif %}
+            </h4>
 
-    <!-- ✅ Risk Level Classification -->
-    <div class="mt-3">
-        <h4>Risk Level:
-            {% if prediction == "Yes" and HbA1c_level >= 6.5 or blood_glucose_level > 200 %}
-                <span class="text-danger">High Risk</span>
-            {% elif prediction == "Yes" and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %}
-                <span class="text-warning">Moderate Risk</span>
-            {% else %}
-                <span class="text-success">Low Risk</span>
-            {% endif %}
-        </h4>
-        <div class="progress mt-2" style="height: 20px;">
-            <div class="progress-bar
-                {% if prediction == 'Yes' and HbA1c_level >= 6.5 or blood_glucose_level > 200 %} bg-danger
-                {% elif prediction == 'Yes' and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %} bg-warning
-                {% else %} bg-success {% endif %}"
-                role="progressbar" style="width:
-                {% if prediction == 'Yes' and HbA1c_level >= 6.5 or blood_glucose_level > 200 %} 90%
-                {% elif prediction == 'Yes' and (HbA1c_level >= 5.7 or blood_glucose_level > 140) %} 60%
-                {% else %} 30% {% endif %}">
+            <!-- ✅ Risk Level Progress Bar -->
+            <div class="progress mt-2" style="height: 20px;">
+                <div class="progress-bar
+                    {% if HbA1c_level >= 6.5 or blood_glucose_level >= 200 %} bg-danger
+                    {% elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200 %} bg-warning
+                    {% else %} bg-success {% endif %}"
+                    role="progressbar" style="width:
+                    {% if HbA1c_level >= 6.5 or blood_glucose_level >= 200 %} 90%
+                    {% elif 5.7 <= HbA1c_level < 6.5 or 140 <= blood_glucose_level < 200 %} 60%
+                    {% else %} 30% {% endif %};">
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- ✅ Display User Input Summary -->
-    <div class="mt-4 text-left">
-        <h4>Health Summary</h4>
-        <p><strong>Age:</strong> {{ age }}</p>
-        <p><strong>BMI:</strong> {{ bmi }}</p>
-        <p><strong>HbA1c Level:</strong> {{ HbA1c_level }}</p>
-        <p><strong>Blood Glucose Level:</strong> {{ blood_glucose_level }}</p>
-        <p><strong>Gender:</strong> {{ gender }}</p>
-        <p><strong>Smoking History:</strong> {{ smoking_history }}</p>
-        <p><strong>Heart Disease:</strong> {{ "Yes" if heart_disease == 1 else "No" }}</p>
-        <p><strong>Hypertension:</strong> {{ "Yes" if hypertension == 1 else "No" }}</p>
-    </div>
+        <!-- ✅ Health Summary -->
+        <div class="mt-4 text-center">
+            <h4>Health Summary</h4>
+            <ul class="list-group d-inline-block text-start">
+                <li class="list-group-item"><i class="fas fa-user"></i> <strong>Age:</strong> {{ age }}</li>
+                <li class="list-group-item"><i class="fas fa-weight"></i> <strong>BMI:</strong> {{ bmi }}</li>
+                <li class="list-group-item"><i class="fas fa-heartbeat"></i> <strong>HbA1c Level:</strong> {{ HbA1c_level }}</li>
+                <li class="list-group-item"><i class="fas fa-tint"></i> <strong>Blood Glucose Level:</strong> {{ blood_glucose_level }}</li>
+                <li class="list-group-item"><i class="fas fa-venus-mars"></i> <strong>Gender:</strong> {{ gender }}</li>
+                <li class="list-group-item"><i class="fas fa-smoking"></i> <strong>Smoking History:</strong> {{ smoking_history }}</li>
+                <li class="list-group-item"><i class="fas fa-heart"></i> <strong>Heart Disease:</strong> {{ "Yes" if heart_disease == 1 else "No" }}</li>
+                <li class="list-group-item"><i class="fas fa-stethoscope"></i> <strong>Hypertension:</strong> {{ "Yes" if hypertension == 1 else "No" }}</li>
+            </ul>
+        </div>
 
-    <!-- ✅ More Personalized Feedback -->
-    <div class="mt-4 p-3 bg-light border rounded">
-        <h4>Personalized Feedback</h4>
-        <p>
-            {% if prediction == "Yes" %}
-                Based on your HbA1c level ({{ HbA1c_level }}) and blood glucose level ({{ blood_glucose_level }}),
-                you are at a **{% if HbA1c_level >= 6.5 or blood_glucose_level > 200 %} high {% elif HbA1c_level >= 5.7 or blood_glucose_level > 140 %} moderate {% else %} low {% endif %}** risk of diabetes.
-                It is recommended that you consult a healthcare professional for further evaluation.
-            {% else %}
-                Your current readings indicate a low risk of diabetes. However, it is important to maintain a **healthy lifestyle** to prevent any future risks.
-            {% endif %}
-        </p>
-    </div>
+        <!-- ✅ Two Small Line Charts Side-by-Side for HbA1c & Blood Glucose -->
+        <h4 class="mt-4">Health Indicators Comparison</h4>
+        <div class="d-flex justify-content-center flex-wrap">
+            <div class="chart-container">
+                <h5>HbA1c Level</h5>
+                <canvas id="hba1cChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h5>Blood Glucose Level</h5>
+                <canvas id="glucoseChart"></canvas>
+            </div>
+        </div>
 
-    <!-- ✅ Recommendations Based on Prediction -->
-    <div class="mt-4 p-3 bg-light border rounded">
-        <h4>Health Recommendations</h4>
-        <ul>
-            {% if prediction == "Yes" %}
-                <li>Schedule a medical consultation for further evaluation.</li>
-                <li>Maintain a balanced diet with fiber-rich foods and monitor carbohydrate intake.</li>
-                <li>Exercise regularly (30 minutes of walking or cardio daily).</li>
-                <li>Monitor blood glucose and HbA1c levels frequently.</li>
-                <li>Reduce processed food and sugar intake.</li>
-            {% else %}
-                <li>Maintain a healthy lifestyle with a balanced diet and regular exercise.</li>
-                <li>Continue monitoring your blood glucose and BMI regularly.</li>
-                <li>Stay hydrated and avoid high-sugar beverages.</li>
-                <li>Follow medical advice for preventive care.</li>
-            {% endif %}
-        </ul>
-    </div>
+            <div class="mt-4">
+            <h4>Manage Your Data</h4>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-2">View Dashboard</a>
+            <a href="{{ url_for('export_csv') }}" class="btn btn-success mt-2">Download CSV</a>
+            <a href="{{ url_for('export_pdf') }}" class="btn btn-danger mt-2">Download PDF</a>
+        </div>
 
-    <!-- ✅ Download & Dashboard Options -->
-    <div class="mt-4">
-        <h4>Manage Your Data</h4>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary mt-2">View Dashboard</a>
-        <a href="{{ url_for('export_csv') }}" class="btn btn-success mt-2">Download CSV</a>
-        <a href="{{ url_for('export_pdf') }}" class="btn btn-danger mt-2">Download PDF</a>
+
     </div>
 </div>
+
+<script>
+    // HbA1c Line Chart
+    var hba1cCtx = document.getElementById('hba1cChart').getContext('2d');
+    new Chart(hba1cCtx, {
+        type: 'line',
+        data: {
+            labels: ['Your HbA1c', 'Normal HbA1c'],
+            datasets: [{
+                label: 'HbA1c Level',
+                data: [{{ HbA1c_level }}, 5.6],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        }
+    });
+
+    // Blood Glucose Line Chart
+    var glucoseCtx = document.getElementById('glucoseChart').getContext('2d');
+    new Chart(glucoseCtx, {
+        type: 'line',
+        data: {
+            labels: ['Your Glucose', 'Normal Glucose'],
+            datasets: [{
+                label: 'Blood Glucose Level',
+                data: [{{ blood_glucose_level }}, 140],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        }
+    });
+</script>
 
 </body>
 </html>
