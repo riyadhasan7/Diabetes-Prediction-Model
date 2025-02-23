@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>User Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 100%;
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
 
@@ -18,6 +30,12 @@
 <div class="container mt-5">
     <h2 class="text-center">User Dashboard</h2>
     <p class="text-center text-muted">View your past predictions</p>
+
+    <!-- ✅ Health Trends Graph at the Top -->
+    <div class="chart-container">
+        <h4 class="text-center">Health Trends Over Time</h4>
+        <canvas id="historyChart"></canvas>
+    </div>
 
     {% if records %}
     <table class="table table-bordered mt-4">
@@ -54,13 +72,65 @@
     </table>
 
     <!-- ✅ Download Buttons -->
-    <a href="{{ url_for('export_csv') }}" class="btn btn-success">Download CSV</a>
-    <a href="{{ url_for('export_pdf') }}" class="btn btn-danger">Download PDF</a>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('export_csv') }}" class="btn btn-success">Download CSV</a>
+        <a href="{{ url_for('export_pdf') }}" class="btn btn-danger">Download PDF</a>
+    </div>
 
     {% else %}
     <p class="text-center text-muted">No records found.</p>
     {% endif %}
 </div>
+
+
+<script>
+    var ctx = document.getElementById('historyChart').getContext('2d');
+    var historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ dates | tojson }},
+            datasets: [{
+                label: 'HbA1c Level',
+                data: {{ hba1c_levels | tojson }},
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                yAxisID: 'y-left'
+            }, {
+                label: 'Blood Glucose',
+                data: {{ glucose_levels | tojson }},
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                yAxisID: 'y-right'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                'y-left': {
+                    position: 'left',
+                    beginAtZero: true,
+                    title: { display: true, text: 'HbA1c Level' }
+                },
+                'y-right': {
+                    position: 'right',
+                    beginAtZero: true,
+                    title: { display: true, text: 'Blood Glucose Level' },
+                    grid: { drawOnChartArea: false }  // Prevents overlapping grid lines
+                }
+            }
+        }
+    });
+</script>
+
 
 </body>
 </html>
